@@ -112,7 +112,15 @@
 
         // Global variables for Firebase config (provided by Canvas environment)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        //const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBnJ7AOWggzZeVE-i4zZCq7R3sOvnhEVM",
+            authDomain: "labs-463322.firebaseapp.com",
+            projectId: "labs-463322",
+            storageBucket: "labs-463322.firebasestorage.app",
+            messagingSenderId: "137748040614",
+            appId: "1:137748040614:web:ebdcda878fe2b891109d67",
+        };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let app, db, auth;
