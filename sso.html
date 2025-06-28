@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Funding SSO Prototype: Sign in with SNET</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-4xl transform transition-all duration-300 ease-in-out">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Deep Funding SSO Prototype</h1>
+
+        <!-- Navigation Buttons -->
+        <div class="flex justify-center space-x-4 mb-8">
+            <button id="goToSsoLoginBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                SSO Login Page
+            </button>
+            <button id="goToDeepLabsBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Deep Labs
+            </button>
+            <button id="goToDFPortalBtn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                DF Portal
+            </button>
+            <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Logout
+            </button>
+        </div>
+
+        <!-- Dynamic Content Area -->
+        <div id="content-area" class="border border-gray-200 rounded-lg p-6 bg-gray-50 min-h-[300px] flex items-center justify-center relative">
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10 hidden rounded-lg">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500"></div>
+            </div>
+
+            <!-- SSO Login Section (Simulated IdP) -->
+            <div id="sso-login-section" class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 text-center">Sign in with SNET</h2>
+                <div id="sso-message" class="text-center text-sm font-medium mb-4"></div>
+
+                <form id="sso-login-form">
+                    <div class="mb-4">
+                        <label for="sso-email" class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                        <input type="email" id="sso-email" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@email.com" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="sso-password" class="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+                        <input type="password" id="sso-password" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="********" required>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 ease-in-out transform hover:scale-105">
+                            Login
+                        </button>
+                        <button type="button" id="sso-register-btn" class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800 transition duration-300 ease-in-out">
+                            Register
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Deep Labs Section -->
+            <div id="deep-labs-section" class="hidden w-full text-center">
+                <h2 class="text-2xl font-semibold text-purple-700 mb-4">Welcome to Deep Labs!</h2>
+                <p id="deep-labs-user-info" class="text-gray-700 text-lg"></p>
+                <p class="text-gray-500 mt-2">This is your innovative platform for AI-driven solutions.</p>
+            </div>
+
+            <!-- Deep Funding Portal Section -->
+            <div id="df-portal-section" class="hidden w-full text-center">
+                <h2 class="text-2xl font-semibold text-green-700 mb-4">Welcome to the Deep Funding Portal!</h2>
+                <p id="df-portal-user-info" class="text-gray-700 text-lg"></p>
+                <p class="text-gray-500 mt-2">Manage your proposals, rounds, and community here.</p>
+            </div>
+
+            <!-- Global Message Box -->
+            <div id="message-box" class="fixed bottom-4 right-4 bg-gray-800 text-white py-3 px-6 rounded-lg shadow-xl hidden transition-all duration-300 ease-in-out z-50">
+                <p id="message-text"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase config (provided by Canvas environment)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false; // Flag to ensure Firestore operations wait for auth readiness
+
+        // UI Elements
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const ssoLoginSection = document.getElementById('sso-login-section');
+        const ssoLoginForm = document.getElementById('sso-login-form');
+        const ssoEmailInput = document.getElementById('sso-email');
+        const ssoPasswordInput = document.getElementById('sso-password');
+        const ssoRegisterBtn = document.getElementById('sso-register-btn');
+        const ssoMessage = document.getElementById('sso-message');
+        const deepLabsSection = document.getElementById('deep-labs-section');
+        const deepLabsUserInfo = document.getElementById('deep-labs-user-info');
+        const dfPortalSection = document.getElementById('df-portal-section');
+        const dfPortalUserInfo = document.getElementById('df-portal-user-info');
+        const goToSsoLoginBtn = document.getElementById('goToSsoLoginBtn');
+        const goToDeepLabsBtn = document.getElementById('goToDeepLabsBtn');
+        const goToDFPortalBtn = document.getElementById('goToDFPortalBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        // Global State for simulated SSO
+        let currentApp = 'sso-login'; // Can be 'sso-login', 'deep-labs', 'df-portal'
+        let currentUserProfile = null; // Stores the fetched user profile
+
+        // --- Firebase Initialization and Authentication ---
+        async function initializeFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    showMessage("Firebase config is missing. Prototype will run without persistence.", "warning");
+                    // For local testing without Firebase config, proceed as anonymous
+                    return;
+                }
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Listen for auth state changes
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        // Attempt to fetch user profile from Firestore
+                        await fetchUserProfile(userId);
+                    } else {
+                        userId = null;
+                        currentUserProfile = null;
+                    }
+                    isAuthReady = true; // Auth state has been checked
+                    updateUI(); // Update UI after auth state is determined
+                });
+
+                // Sign in using the initial custom token or anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    showMessage("Signed in with custom token.", "success");
+                } else {
+                    await signInAnonymously(auth);
+                    showMessage("Signed in anonymously. Please register or login to use full features.", "info");
+                }
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showMessage(`Firebase init error: ${error.message}`, "error");
+            }
+        }
+
+        // --- Utility Functions ---
+
+        function showLoading() {
+            loadingIndicator.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingIndicator.classList.add('hidden');
+        }
+
+        function showMessage(msg, type = 'info') {
+            messageText.textContent = msg;
+            messageBox.classList.remove('hidden', 'bg-red-500', 'bg-green-500', 'bg-blue-500', 'bg-yellow-500', 'bg-gray-800');
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-500');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-500');
+            } else if (type === 'info') {
+                messageBox.classList.add('bg-blue-500');
+            } else if (type === 'warning') {
+                messageBox.classList.add('bg-yellow-500'); // Use yellow for warnings
+            } else {
+                messageBox.classList.add('bg-gray-800');
+            }
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000); // Hide after 5 seconds
+        }
+
+        function hideAllSections() {
+            ssoLoginSection.classList.add('hidden');
+            deepLabsSection.classList.add('hidden');
+            dfPortalSection.classList.add('hidden');
+        }
+
+        async function fetchUserProfile(uid) {
+            if (!db || !isAuthReady) {
+                console.warn("Firestore not ready to fetch user profile.");
+                return null;
+            }
+            try {
+                showLoading();
+                const userDocRef = doc(db, `artifacts/${appId}/users/${uid}/profiles`, uid); // Private user data
+                const docSnap = await getDoc(userDocRef);
+                if (docSnap.exists()) {
+                    currentUserProfile = docSnap.data();
+                    console.log("User profile fetched:", currentUserProfile);
+                    return currentUserProfile;
+                } else {
+                    console.log("No user profile found for UID:", uid);
+                    currentUserProfile = { email: auth.currentUser.email || 'N/A', snetWalletAddress: 'N/A', username: 'Guest' }; // Default profile for Firebase user without Firestore entry
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                showMessage(`Failed to fetch profile: ${error.message}`, "error");
+                return null;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function saveUserProfile(uid, profileData) {
+            if (!db || !isAuthReady) {
+                showMessage("Firestore not ready to save user profile.", "error");
+                return false;
+            }
+            try {
+                showLoading();
+                const userDocRef = doc(db, `artifacts/${appId}/users/${uid}/profiles`, uid); // Private user data
+                await setDoc(userDocRef, profileData, { merge: true });
+                showMessage("User profile saved successfully!", "success");
+                return true;
+            } catch (error) {
+                console.error("Error saving user profile:", error);
+                showMessage(`Failed to save profile: ${error.message}`, "error");
+                return false;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- SSO & App Navigation Logic ---
+
+        function updateUI() {
+            hideAllSections();
+            const isLoggedIn = auth.currentUser && !auth.currentUser.isAnonymous; // Check if a real user is logged in
+            const userInfoText = isLoggedIn && currentUserProfile ?
+                `User: ${currentUserProfile.username || currentUserProfile.email} (UID: ${userId})` :
+                `Not logged in.`;
+
+            if (currentApp === 'sso-login') {
+                ssoLoginSection.classList.remove('hidden');
+                ssoMessage.textContent = isLoggedIn ? `You are logged in as ${currentUserProfile?.username || currentUserProfile?.email}.` : 'Please login or register.';
+                ssoEmailInput.value = '';
+                ssoPasswordInput.value = '';
+            } else if (currentApp === 'deep-labs') {
+                deepLabsSection.classList.remove('hidden');
+                if (isLoggedIn) {
+                    deepLabsUserInfo.textContent = `Hello, ${currentUserProfile?.username || currentUserProfile?.email}! (UID: ${userId})`;
+                } else {
+                    deepLabsUserInfo.textContent = "You are not logged in to Deep Labs. Please use the SSO Login page.";
+                }
+            } else if (currentApp === 'df-portal') {
+                dfPortalSection.classList.remove('hidden');
+                if (isLoggedIn) {
+                    dfPortalUserInfo.textContent = `Hello, ${currentUserProfile?.username || currentUserProfile?.email}! (UID: ${userId})`;
+                } else {
+                    dfPortalUserInfo.textContent = "You are not logged in to the Deep Funding Portal. Please use the SSO Login page.";
+                }
+            }
+
+            // Enable/Disable buttons based on login status
+            goToDeepLabsBtn.disabled = !isLoggedIn;
+            goToDFPortalBtn.disabled = !isLoggedIn;
+            logoutBtn.disabled = !isLoggedIn;
+            goToSsoLoginBtn.disabled = false; // Always allow going back to SSO login
+        }
+
+        // Simulates the SSO redirect from a client app to the IdP
+        function simulateSnetLoginRedirect(originatingApp) {
+            currentApp = 'sso-login'; // Switch to the SSO login page
+            // In a real scenario, the IdP would store the 'redirect_uri' and 'client_id'
+            // For this prototype, we implicitly know the originating app based on `currentApp` state change
+            ssoMessage.textContent = `Redirected from ${originatingApp} for Sign in with SNET.`;
+            updateUI();
+        }
+
+        // --- Event Listeners ---
+
+        goToSsoLoginBtn.addEventListener('click', () => {
+            currentApp = 'sso-login';
+            updateUI();
+        });
+
+        goToDeepLabsBtn.addEventListener('click', () => {
+            if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                currentApp = 'deep-labs';
+                updateUI();
+            } else {
+                showMessage("You need to be logged in to access Deep Labs. Please Sign in with SNET.", "warning");
+                simulateSnetLoginRedirect('Deep Labs');
+            }
+        });
+
+        goToDFPortalBtn.addEventListener('click', () => {
+            if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                currentApp = 'df-portal';
+                updateUI();
+            } else {
+                showMessage("You need to be logged in to access Deep Funding Portal. Please Sign in with SNET.", "warning");
+                simulateSnetLoginRedirect('Deep Funding Portal');
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            showLoading();
+            try {
+                if (auth) {
+                    await signOut(auth);
+                }
+                userId = null;
+                currentUserProfile = null;
+                currentApp = 'sso-login'; // Redirect to SSO login after logout
+                showMessage("Logged out successfully.", "success");
+            } catch (error) {
+                console.error("Error during logout:", error);
+                showMessage(`Logout failed: ${error.message}`, "error");
+            } finally {
+                hideLoading();
+                updateUI();
+            }
+        });
+
+        ssoLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = ssoEmailInput.value;
+            const password = ssoPasswordInput.value;
+
+            if (!email || !password) {
+                showMessage("Please enter both email and password.", "warning");
+                return;
+            }
+
+            showLoading();
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                userId = userCredential.user.uid;
+                const profile = await fetchUserProfile(userId);
+
+                if (!profile) {
+                    // If no profile exists in Firestore, create a basic one
+                    await saveUserProfile(userId, {
+                        email: email,
+                        username: email.split('@')[0],
+                        snetWalletAddress: 'mock-snet-address-' + userId.substring(0, 8)
+                    });
+                    currentUserProfile = await fetchUserProfile(userId); // Re-fetch to get the new profile
+                }
+
+                showMessage("Login successful! Redirecting to application...", "success");
+                // In a real SSO, the IdP would redirect back to the app that initiated the login.
+                // For this prototype, we'll just go to a default app or stay on SSO page
+                currentApp = 'deep-labs'; // Default redirect target after successful SSO login
+                updateUI();
+            } catch (error) {
+                console.error("SSO Login Error:", error);
+                showMessage(`Login failed: ${error.message}`, "error");
+            } finally {
+                hideLoading();
+            }
+        });
+
+        ssoRegisterBtn.addEventListener('click', async () => {
+            const email = ssoEmailInput.value;
+            const password = ssoPasswordInput.value;
+
+            if (!email || !password) {
+                showMessage("Please enter email and password for registration.", "warning");
+                return;
+            }
+
+            showLoading();
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                userId = userCredential.user.uid;
+
+                // Create a profile in Firestore for the new user
+                const newProfile = {
+                    email: email,
+                    username: email.split('@')[0], // Simple username from email
+                    snetWalletAddress: 'mock-snet-address-' + userId.substring(0, 8),
+                    registrationDate: new Date().toISOString()
+                };
+                await saveUserProfile(userId, newProfile);
+                currentUserProfile = newProfile; // Set current profile
+
+                showMessage("Registration successful! You are now logged in.", "success");
+                currentApp = 'deep-labs'; // Default redirect target after successful registration
+                updateUI();
+            } catch (error) {
+                console.error("SSO Registration Error:", error);
+                showMessage(`Registration failed: ${error.message}`, "error");
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // --- Initialize the App ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase(); // Start Firebase initialization
+            updateUI(); // Initial UI render (will be updated again by onAuthStateChanged)
+        });
+
+    </script>
+</body>
+</html>
