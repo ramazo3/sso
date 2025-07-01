@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How AI4P Works | An Interactive Journey</title>
+    <!-- Chosen Palette: Calm Tech Harmony -->
+    <!-- Application Structure Plan: The SPA is designed as a horizontal, interactive stepper to guide users through the 6-step idea lifecycle. This structure breaks down the complex process into manageable, engaging chunks. Users can navigate sequentially with "Next/Previous" buttons or jump directly to any step using the top navigation. This is more interactive and less overwhelming than a long, scrolling page. The central content area dynamically updates with custom animations and text for each selected step, creating a feeling of a guided journey. -->
+    <!-- Visualization & Content Choices: The application visualizes each of the 6 steps from the source report. Each step's "visual" is a custom-built, animated element using HTML/CSS and JavaScript (including one Canvas animation for Step 4), avoiding static images, SVG, or Mermaid to create a more dynamic and unique experience. This approach turns abstract concepts like "clustering" and "AI analysis" into tangible, interactive visualizations, enhancing user understanding and engagement. Interactions include on-hover effects and animated transitions between steps. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4;
+            color: #333333;
+        }
+        .step-button {
+            transition: all 0.3s ease;
+            border-bottom: 4px solid transparent;
+        }
+        .step-button.active {
+            border-bottom-color: #005F73;
+            color: #005F73;
+            font-weight: 600;
+        }
+        .content--hidden {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .content-area.fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 200px;
+            max-height: 200px;
+            margin: 0 auto;
+        }
+        /* Custom animated icons */
+        .icon-lightbulb {
+            width: 80px; height: 80px; background-color: #E9D8A6; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; position: relative;
+        }
+        .icon-lightbulb::before {
+            content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 20px; height: 10px; background-color: #94D2BD; border-radius: 2px;
+        }
+        .icon-lightbulb .circuit { width: 2px; height: 15px; background: #005F73; position: absolute; }
+        .icon-brain { width: 80px; height: 80px; border: 3px solid #005F73; border-radius: 50%; position: relative; }
+        .icon-brain .node { width: 8px; height: 8px; background: #94D2BD; border-radius: 50%; position: absolute; }
+        .icon-people { display: flex; align-items: flex-end; height: 80px;}
+        .icon-people .person { width: 25px; height: 50px; background-color: #005F73; border-radius: 50% 50% 0 0; position: relative; margin: 0 -5px; opacity: 0.8; transition: all 0.3s ease; }
+        .icon-people .person:nth-child(2) { height: 65px; background-color: #94D2BD; z-index: 10;}
+        .icon-people .person:nth-child(3) { height: 55px; }
+        .icon-people:hover .person { transform: translateY(-5px); }
+        .icon-trophy { width: 80px; height: 80px; background-color: #E9D8A6; position: relative; clip-path: polygon(20% 0%, 80% 0%, 100% 40%, 80% 100%, 20% 100%, 0 40%); }
+        .icon-trophy::before { content: '★'; font-size: 3rem; color: #fff; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);}
+        .icon-plant { width: 80px; height: 80px; position: relative;}
+        .icon-plant .stem { width: 6px; height: 60px; background: #94D2BD; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); border-radius: 3px 3px 0 0; }
+        .icon-plant .leaf { width: 30px; height: 30px; background: #94D2BD; position: absolute; border-radius: 0 50% 0 50%; }
+        .icon-plant .base { width: 60px; height: 20px; background: #005F73; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); border-radius: 5px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div class="w-full max-w-5xl mx-auto">
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#005F73] mb-2">How AI4P Works</h1>
+            <p class="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto">An interactive journey from initial spark to real-world impact. Discover our unique process for turning your vision into a funded peacebuilding solution.</p>
+        </header>
+
+        <nav id="stepper" class="flex flex-wrap justify-center border-b border-gray-300 mb-8">
+            <!-- Step buttons will be inserted here by JS -->
+        </nav>
+
+        <main id="main-content" class="bg-white rounded-xl shadow-lg p-6 sm:p-8 lg:p-10 min-h-[500px]">
+            <!-- Dynamic content will be loaded here -->
+        </main>
+
+        <footer class="mt-8 flex justify-between items-center">
+            <button id="prev-btn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+            <div id="step-indicator" class="text-sm text-gray-500 font-medium">Step 1 of 6</div>
+            <button id="next-btn" class="px-6 py-2 bg-[#005F73] text-white rounded-lg shadow hover:bg-[#004c5c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Next Step</button>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const steps = [
+                {
+                    title: '1. Share Your Vision',
+                    icon: '<div class="icon-lightbulb"><div class="circuit" style="top: 20px; left: 30px;"></div><div class="circuit" style="top: 35px; left: 45px; height: 10px;"></div></div>',
+                    heading: 'The Spark of Innovation',
+                    content: "Your journey begins by sharing your innovative idea for how Artificial Intelligence can contribute to peacebuilding. Our intuitive submission form guides you through defining the problem you're addressing, your proposed AI solution, and its potential impact. This is your chance to articulate a solution for critical global challenges – from conflict prevention to humanitarian aid and reconciliation.",
+                    highlights: [
+                        'Simple, guided submission process.',
+                        'Focus on real-world peace challenges.',
+                        'Your idea enters a global ecosystem of change.'
+                    ]
+                },
+                {
+                    title: '2. AI-Powered Analysis',
+                    icon: '<div class="icon-brain"><div class="node" style="top: 10px; left: 36px;"></div><div class="node" style="top: 36px; left: 10px;"></div><div class="node" style="top: 36px; left: 62px;"></div><div class="node" style="bottom: 10px; left: 36px;"></div></div>',
+                    heading: 'Initial Insights',
+                    content: "Once submitted, your idea enters our unique, multi-layered review system. Our advanced AI models (Large Language Models) perform a rapid, comprehensive preliminary analysis. They assess the novelty, technical feasibility, and potential impact of your solution, while also flagging any initial ethical considerations. This intelligent first pass helps us quickly identify promising concepts and areas for deeper review.",
+                    highlights: [
+                        'Rapid, objective initial assessment by AI.',
+                        'Early identification of key strengths and potential risks.',
+                        'Leveraging cutting-edge AI for efficient screening.'
+                    ]
+                },
+                {
+                    title: '3. Community & Expert Refinement',
+                    icon: '<div class="icon-people"><div class="person"></div><div class="person"></div><div class="person"></div></div>',
+                    heading: 'Collective Intelligence',
+                    content: "This is where the power of collective intelligence truly shines. Your idea is opened to the diverse AI4P community – a network of AI experts, peacebuilding practitioners, researchers, and passionate individuals. They provide invaluable feedback, engage in constructive discussions, and help refine concepts. Concurrently, our dedicated human reviewers offer in-depth qualitative assessments, leveraging their nuanced understanding of peace contexts and AI ethics.",
+                    highlights: [
+                        'Collaborative refinement through community feedback.',
+                        'Expert human review for nuanced understanding and ethical oversight.',
+                        'Ideas strengthened by diverse perspectives.'
+                    ]
+                },
+                {
+                    title: '4. Intelligent Clustering',
+                    icon: '<div class="chart-container"><canvas id="clusteringCanvas"></canvas></div>',
+                    heading: 'Synergy Identification',
+                    content: "To maximize impact and avoid duplication, our system intelligently clusters similar ideas based on their core problem, proposed solution, and AI-generated insights. This process highlights synergies between concepts, making it easier to identify opportunities to merge or combine complementary ideas into more robust and comprehensive proposals. We believe combined efforts can lead to even greater breakthroughs.",
+                    highlights: [
+                        'Identify overlapping and complementary ideas.',
+                        'Foster collaboration for stronger solutions.',
+                        'Streamline the path to impactful projects.'
+                    ]
+                },
+                {
+                    title: '5. Weighted Selection',
+                    icon: '<div class="icon-trophy"></div>',
+                    heading: 'DeepFunding Opportunity',
+                    content: "The most impactful, feasible, and ethically aligned ideas, having undergone both AI analysis and rigorous human review, are then selected to move to the next stage. These 'best of the best' ideas are transformed into formal Requests for Proposals (RFPs) or Hackathon Challenges on the main DeepFunding portal. This is the critical launchpad for attracting dedicated teams and securing the resources needed for development.",
+                    highlights: [
+                        'Rigorous, weighted selection process.',
+                        'Direct pathway to DeepFunding\'s grant mechanisms.',
+                        'Opportunity to attract dedicated development teams.'
+                    ]
+                },
+                {
+                    title: '6. Build & Fund',
+                    icon: '<div class="icon-plant"><div class="stem"></div><div class="leaf" style="bottom: 60px; left: 15px; transform: rotate(-45deg);"></div><div class="leaf" style="bottom: 45px; left: 35px; transform: rotate(45deg) scaleX(-1);"></div><div class="base"></div></div>',
+                    heading: 'From Idea to Real-World Impact',
+                    content: "Teams submit detailed proposals or hackathon solutions in response to the AI4P-generated opportunities on DeepFunding. Successful proposals receive significant funding and comprehensive support through the DeepFunding ecosystem. This empowers innovators to develop, test, and deploy their AI for Peace solutions, turning groundbreaking ideas into tangible tools that foster stability, promote human security, and build lasting peace worldwide.",
+                    highlights: [
+                        'Access to substantial funding for development.',
+                        'Support and mentorship from the DeepFunding ecosystem.',
+                        'Your idea contributes directly to real-world peace initiatives.'
+                    ]
+                }
+            ];
+
+            let currentState = {
+                currentIndex: 0,
+                clusteringAnimation: null,
+            };
+
+            const stepperContainer = document.getElementById('stepper');
+            const mainContent = document.getElementById('main-content');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const stepIndicator = document.getElementById('step-indicator');
+
+            function initStepper() {
+                steps.forEach((step, index) => {
+                    const button = document.createElement('button');
+                    button.innerHTML = `<span class="hidden sm:inline">${step.title}</span><span class="sm:hidden">${index + 1}</span>`;
+                    button.className = 'step-button text-sm sm:text-base font-medium text-gray-500 py-3 px-2 sm:px-4';
+                    button.dataset.index = index;
+                    button.addEventListener('click', () => navigateTo(index));
+                    stepperContainer.appendChild(button);
+                });
+            }
+
+            function navigateTo(index) {
+                if (index < 0 || index >= steps.length) return;
+
+                // Cleanup previous canvas animation
+                if (currentState.clusteringAnimation) {
+                    window.cancelAnimationFrame(currentState.clusteringAnimation);
+                    currentState.clusteringAnimation = null;
+                }
+
+                currentState.currentIndex = index;
+                renderContent();
+                updateUI();
+            }
+
+            function renderContent() {
+                const step = steps[currentState.currentIndex];
+                const highlightsHTML = step.highlights.map(h => `<li class="flex items-start"><span class="mr-3 text-lg text-[#94D2BD]">✔</span><span>${h}</span></li>`).join('');
+
+                mainContent.innerHTML = `
+                    <div class="content-area grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                        <div class="flex flex-col items-center justify-center p-4">
+                            ${step.icon}
+                        </div>
+                        <div>
+                            <h2 class="text-2xl sm:text-3xl font-bold text-[#005F73] mb-4">${step.heading}</h2>
+                            <p class="text-gray-600 mb-6 leading-relaxed">${step.content}</p>
+                            <ul class="space-y-3 text-gray-700">
+                                ${highlightsHTML}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+
+                mainContent.classList.remove('fade-in');
+                void mainContent.offsetWidth;
+                mainContent.classList.add('fade-in');
+
+                if (step.title === '4. Intelligent Clustering') {
+                    const canvas = document.getElementById('clusteringCanvas');
+                    if(canvas) {
+                        initClusteringAnimation(canvas);
+                    }
+                }
+            }
+
+            function updateUI() {
+                // Update buttons
+                document.querySelectorAll('.step-button').forEach((btn, index) => {
+                    if (index === currentState.currentIndex) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+
+                // Update prev/next buttons
+                prevBtn.disabled = currentState.currentIndex === 0;
+                nextBtn.disabled = currentState.currentIndex === steps.length - 1;
+
+                // Update indicator
+                stepIndicator.textContent = `Step ${currentState.currentIndex + 1} of ${steps.length}`;
+            }
+
+            function initClusteringAnimation(canvas) {
+                const ctx = canvas.getContext('2d');
+                let width, height;
+
+                function resize() {
+                    width = canvas.parentElement.clientWidth;
+                    height = canvas.parentElement.clientHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+                resize();
+                window.addEventListener('resize', resize);
+
+                const numDots = 50;
+                const dots = [];
+                const clusters = [
+                    { x: width * 0.2, y: height * 0.3 },
+                    { x: width * 0.7, y: height * 0.4 },
+                    { x: width * 0.4, y: height * 0.7 },
+                ];
+
+                for (let i = 0; i < numDots; i++) {
+                    dots.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        target: clusters[Math.floor(Math.random() * clusters.length)],
+                        color: `rgba(0, 95, 115, ${Math.random() * 0.5 + 0.3})`
+                    });
+                }
+
+                function animate() {
+                    ctx.clearRect(0, 0, width, height);
+                    let allInPlace = true;
+
+                    dots.forEach(dot => {
+                        const dx = dot.target.x - dot.x;
+                        const dy = dot.target.y - dot.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist > 1) {
+                            allInPlace = false;
+                            dot.x += dx * 0.05;
+                            dot.y += dy * 0.05;
+                        }
+
+                        ctx.beginPath();
+                        ctx.arc(dot.x, dot.y, 4, 0, Math.PI * 2);
+                        ctx.fillStyle = dot.color;
+                        ctx.fill();
+                    });
+
+                    if(!allInPlace) {
+                       currentState.clusteringAnimation = requestAnimationFrame(animate);
+                    }
+                }
+                animate();
+            }
+
+            prevBtn.addEventListener('click', () => navigateTo(currentState.currentIndex - 1));
+            nextBtn.addEventListener('click', () => navigateTo(currentState.currentIndex + 1));
+
+            // Initial setup
+            initStepper();
+            navigateTo(0);
+        });
+    </script>
+</body>
+</html>
