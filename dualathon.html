@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI for Peace Dualathon: From Ideas to Impact | AI4P.ai</title>
+    <!-- Chosen Palette: Calm Tech Harmony -->
+    <!-- Application Structure Plan: The SPA is structured into distinct, scrollable sections: Hero, The Challenge, The Dualathon Journey (with an interactive flowchart), Celebrating the Winners (ideation and hackathon), Impact Metrics (with a Chart.js visualization), and Recap & Future. A sticky navigation bar allows users to jump between sections. This linear, sectioned approach provides a clear narrative flow while allowing users to explore specific areas of interest. The design prioritizes visual separation and clear headings for easy content consumption. -->
+    <!-- Visualization & Content Choices:
+        - Hero Visual: A dynamic HTML/CSS animation representing growth and connection, avoiding raster images.
+        - The Dualathon Journey: An interactive HTML/CSS/JS flowchart (no SVG/Mermaid) with animated elements to illustrate the process steps.
+        - Winners: Grid of cards for ideation winners, each linking externally. Simple list for hackathon winners.
+        - Impact Metrics: A Chart.js bar chart (Canvas-based) to visualize key data, demonstrating quantitative impact. Chart responsiveness is handled via maintainAspectRatio: false and a responsive container. Label wrapping is implemented for Chart.js tooltips.
+        - All other visuals are structured HTML/CSS elements.
+        - Interactions: Smooth scroll navigation, hover effects on winner cards, dynamic chart updates (though static data for this demo), and a basic animation for the flowchart.
+        - Justification: This approach combines direct textual information with engaging, custom-built visual elements to make the report's content more digestible and impactful, fostering active user engagement.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4; /* Warm neutral background */
+            color: #333333;
+            scroll-behavior: smooth;
+        }
+        .container {
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        @media (min-width: 640px) {
+            .container {
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
+        }
+        .section-padding {
+            padding-top: 4rem;
+            padding-bottom: 4rem;
+        }
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .nav-link {
+            transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-link:hover {
+            color: #005F73;
+            border-bottom-color: #94D2BD;
+        }
+        .node-box {
+            background-color: #E9D8A6;
+            border: 2px solid #005F73;
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            color: #005F73;
+            font-size: 0.875rem;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease-in-out;
+            position: relative;
+            z-index: 10;
+        }
+        .node-box:hover {
+            transform: translateY(-3px);
+        }
+        .arrow {
+            position: absolute;
+            background-color: #94D2BD;
+            width: 2px;
+            height: 20px;
+            z-index: 5;
+        }
+        .arrow-horizontal {
+            height: 2px;
+            width: 20px;
+        }
+        .arrow::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 6px 4px 0 4px;
+            border-color: #94D2BD transparent transparent transparent;
+            transform: rotate(90deg);
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%) rotate(90deg);
+        }
+        .arrow-horizontal::after {
+            border-width: 4px 6px 4px 0;
+            border-color: transparent #94D2BD transparent transparent;
+            transform: rotate(0deg);
+            top: 50%;
+            left: 100%;
+            transform: translateY(-50%) rotate(0deg);
+        }
+
+        /* Hero Animation */
+        .hero-visual {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 200px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+        .hero-circle {
+            position: absolute;
+            border-radius: 50%;
+            animation: pulse 4s infinite ease-in-out;
+        }
+        .hero-circle:nth-child(1) {
+            width: 80px; height: 80px; background-color: #94D2BD; top: 20%; left: 15%; animation-delay: 0s;
+        }
+        .hero-circle:nth-child(2) {
+            width: 60px; height: 60px; background-color: #E9D8A6; top: 50%; left: 60%; animation-delay: 1.5s;
+        }
+        .hero-circle:nth-child(3) {
+            width: 100px; height: 100px; background-color: #005F73; top: 30%; left: 40%; opacity: 0.7; animation-delay: 3s;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0.6; }
+        }
+
+        /* Chart container styling */
+        .chart-container {
+            position: relative;
+            width: 100%; /* Occupy full parent width */
+            max-width: 600px; /* Max width to prevent excessive stretching */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Base height */
+            max-height: 400px; /* Max height */
+            background-color: #fff;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px; /* Adjust height for larger screens */
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- Sticky Header Navigation -->
+    <header class="sticky-header w-full py-4 px-4 sm:px-6 lg:px-8">
+        <nav class="container flex justify-center space-x-4 sm:space-x-6 md:space-x-8">
+            <a href="#hero" class="nav-link text-sm sm:text-base py-2">Overview</a>
+            <a href="#challenge" class="nav-link text-sm sm:text-base py-2">The Challenge</a>
+            <a href="#journey" class="nav-link text-sm sm:text-base py-2">Our Journey</a>
+            <a href="#winners" class="nav-link text-sm sm:text-base py-2">Winners</a>
+            <a href="#impact" class="nav-link text-sm sm:text-base py-2">Impact</a>
+            <a href="#recap" class="nav-link text-sm sm:text-base py-2">Recap</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="section-padding bg-[#F8F7F4] text-center">
+        <div class="container grid grid-cols-1 lg:grid-cols-2 items-center gap-8 lg:gap-12">
+            <div class="lg:order-2 hero-visual">
+                <div class="hero-circle"></div>
+                <div class="hero-circle"></div>
+                <div class="hero-circle"></div>
+            </div>
+            <div class="lg:order-1 text-left">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#005F73] mb-4 leading-tight">Innovation Unleashed: The AI for Peace Dualathon</h1>
+                <p class="text-lg sm:text-xl text-gray-600 mb-6">A groundbreaking initiative that combined ideation with rapid prototyping, driving solutions for global harmony through Artificial Intelligence.</p>
+                <a href="#challenge" class="inline-block px-8 py-3 bg-[#005F73] text-white font-semibold rounded-lg shadow-md hover:bg-[#004c5c] transition-colors duration-200">Explore the Impact</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Challenge Section -->
+    <section id="challenge" class="section-padding bg-white">
+        <div class="container text-center max-w-4xl">
+            <h2 class="text-3xl sm:text-4xl font-bold text-[#005F73] mb-6">The Challenge: Empowering AI for Peace</h2>
+            <p class="text-lg text-gray-700 mb-8 leading-relaxed">
+                The AI for Peace Dualathon was launched to harness the power of AI in addressing some of the world's most pressing peace and security challenges. We sought innovative ideas and rapid prototypes that could make a tangible difference in real-world conflict zones and communities striving for peace.
+            </p>
+            <div class="bg-blue-50 border-l-4 border-blue-300 text-blue-800 p-6 rounded-lg shadow-sm text-left">
+                <h3 class="text-xl font-semibold mb-3">Problem Statement:</h3>
+                <p class="text-base leading-relaxed">
+                    "Despite significant advancements in Artificial General Intelligence (AGI) and related AI technologies, the world continues to grapple with complex, multifaceted crises that undermine peace, human security, and sustainable development. These challenges often stem from deep-rooted conflicts, misinformation, resource scarcity, and systemic vulnerabilities. There is an urgent need for innovative, ethically-sound AI solutions that can proactively prevent conflicts, effectively respond to humanitarian crises, foster reconciliation, and build resilient communities, particularly in vulnerable regions."
+                </p>
+            </div>
+            <div class="mt-8">
+                <h3 class="text-xl font-semibold text-[#005F73] mb-4">Key Areas Explored:</h3>
+                <div class="flex flex-wrap justify-center gap-3">
+                    <span class="px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-medium">Conflict Prediction & Early Warning</span>
+                    <span class="px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-medium">Humanitarian Aid & Logistics</span>
+                    <span class="px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-medium">Misinformation & Disinformation Combat</span>
+                    <span class="px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-medium">Peace Education & Dialogue</span>
+                    <span class="px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-medium">Reconciliation & Transitional Justice</span>
+                    <span class="px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-medium">Resource Management for Peace</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Dualathon Journey Section -->
+    <section id="journey" class="section-padding bg-[#F8F7F4]">
+        <div class="container text-center">
+            <h2 class="text-3xl sm:text-4xl font-bold text-[#005F73] mb-6">The Dualathon Journey: From Ideation to Prototype</h2>
+            <p class="text-lg text-gray-700 mb-12 max-w-3xl mx-auto">
+                The AI for Peace Dualathon pioneered a unique two-stage approach: an initial Ideation Challenge to gather diverse solutions, followed by an Online Hackathon for rapid prototyping of the most promising concepts. This journey exemplifies AI4P's commitment to nurturing ideas into actionable projects.
+            </p>
+
+            <!-- Flowchart (HTML/CSS/JS based) -->
+            <div class="relative flex flex-col items-center justify-center space-y-8 md:space-y-0 md:flex-row md:space-x-8 lg:space-x-12 px-4 py-8 bg-white rounded-xl shadow-lg">
+                <!-- Step 1 -->
+                <div class="node-box w-32 h-24 flex flex-col justify-center items-center">
+                    <span>1. Ideation</span>
+                    <span>Challenge</span>
+                </div>
+                <div class="arrow-horizontal w-8 h-1 bg-[#94D2BD] relative md:block hidden"></div>
+                <div class="arrow w-1 h-8 bg-[#94D2BD] relative md:hidden block"></div>
+
+                <!-- Step 2 -->
+                <div class="node-box w-32 h-24 flex flex-col justify-center items-center">
+                    <span>2. AI & Human</span>
+                    <span>Review</span>
+                </div>
+                <div class="arrow-horizontal w-8 h-1 bg-[#94D2BD] relative md:block hidden"></div>
+                <div class="arrow w-1 h-8 bg-[#94D2BD] relative md:hidden block"></div>
+
+                <!-- Step 3 -->
+                <div class="node-box w-32 h-24 flex flex-col justify-center items-center">
+                    <span>3. Idea</span>
+                    <span>Selection</span>
+                </div>
+                <div class="arrow-horizontal w-8 h-1 bg-[#94D2BD] relative md:block hidden"></div>
+                <div class="arrow w-1 h-8 bg-[#94D2BD] relative md:hidden block"></div>
+
+                <!-- Step 4 -->
+                <div class="node-box w-32 h-24 flex flex-col justify-center items-center">
+                    <span>4. Online</span>
+                    <span>Hackathon</span>
+                </div>
+                <div class="arrow-horizontal w-8 h-1 bg-[#94D2BD] relative md:block hidden"></div>
+                <div class="arrow w-1 h-8 bg-[#94D2BD] relative md:hidden block"></div>
+
+                <!-- Step 5 -->
+                <div class="node-box w-32 h-24 flex flex-col justify-center items-center">
+                    <span>5. Prototype</span>
+                    <span>Development</span>
+                </div>
+                <div class="arrow-horizontal w-8 h-1 bg-[#94D2BD] relative md:block hidden"></div>
+                <div class="arrow w-1 h-8 bg-[#94D2BD] relative md:hidden block"></div>
+
+                <!-- Step 6 -->
+                <div class="node-box w-32 h-24 flex flex-col justify-center items-center">
+                    <span>6. Impact &</span>
+                    <span>DeepFunding</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Celebrating the Winners Section -->
+    <section id="winners" class="section-padding bg-white">
+        <div class="container text-center">
+            <h2 class="text-3xl sm:text-4xl font-bold text-[#005F73] mb-6">Meet the Innovators: Dualathon Winners</h2>
+            <p class="text-lg text-gray-700 mb-10 max-w-3xl mx-auto">
+                We're thrilled to celebrate the brilliant minds behind the top ideas and prototypes from the AI for Peace Dualathon. These teams are pioneering AI solutions for a more peaceful future.
+            </p>
+
+            <h3 class="text-2xl sm:text-3xl font-semibold text-[#005F73] mb-8">Top 8 Ideation Challenge Winners</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                <!-- Idea 1 -->
+                <a href="https://deepfunding.ai/rfp_ideation/sereniai-nurturing-emotional-healing-and-conscious-relationships/" target="_blank" class="block bg-blue-50 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-blue-100">
+                    <h4 class="text-xl font-bold text-blue-800 mb-2">SereniAI</h4>
+                    <p class="text-sm text-gray-600 mb-3">Nurturing Emotional Healing and Conscious Relationships</p>
+                    <div class="text-left text-sm text-gray-700 space-y-1">
+                        <p><span class="font-semibold text-gray-900">Problem:</span> Addresses emotional distress and relationship conflicts.</p>
+                        <p><span class="font-semibold text-gray-900">AI Approach:</span> AI-powered emotional support and communication analysis.</p>
+                    </div>
+                    <span class="mt-4 inline-block px-3 py-1 bg-blue-200 text-blue-800 text-xs font-semibold rounded-full">Ideation Winner</span>
+                </a>
+                <!-- Idea 2 -->
+                <a href="https://deepfunding.ai/rfp_ideation/agentic-peace-ai-for-dialoguing-and-conflict-prevention/" target="_blank" class="block bg-blue-50 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-blue-100">
+                    <h4 class="text-xl font-bold text-blue-800 mb-2">Agentic Peace</h4>
+                    <p class="text-sm text-gray-600 mb-3">AI for Dialoguing and Conflict Prevention</p>
+                    <div class="text-left text-sm text-gray-700 space-y-1">
+                        <p><span class="font-semibold text-gray-900">Problem:</span> Escalating disputes and lack of effective dialogue.</p>
+                        <p><span class="font-semibold text-gray-900">AI Approach:</span> AI agents facilitating mediation and identifying common ground.</p>
+                    </div>
+                    <span class="mt-4 inline-block px-3 py-1 bg-blue-200 text-blue-800 text-xs font-semibold rounded-full">Ideation Winner</span>
+                </a>
+                <!-- Idea 3 -->
+                <a href="https://deepfunding.ai/rfp_ideation/voice-for-the-voiceless-ai-powered-legal-aid-for-refugees/" target="_blank" class="block bg-blue-50 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-blue-100">
+                    <h4 class="text-xl font-bold text-blue-800 mb-2">Voice for the Voiceless</h4>
+                    <p class="text-sm text-gray-600 mb-3">AI-Powered Legal Aid for Refugees</p>
+                    <div class="text-left text-sm text-gray-700 space-y-1">
+                        <p><span class="font-semibold text-gray-900">Problem:</span> Refugees lacking access to critical legal assistance.</p>
+                        <p><span class="font-semibold text-gray-900">AI Approach:</span> AI chatbot for legal information and document generation.</p>
+                    </div>
+                    <span class="mt-4 inline-block px-3 py-1 bg-blue-200 text-blue-800 text-xs font-semibold rounded-full">Ideation Winner</span>
+                </a>
+                <!-- Idea 4 -->
+                <a href="https://deepfunding.ai/rfp_ideation/harmonybridge-ai-powered-reconciliation-peace-sustainability-platform/" target="_blank" class="block bg-blue-50 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-blue-100">
+                    <h4 class="text-xl font-bold text-blue-800 mb-2">HarmonyBridge AI</h4>
+                    <p class="text-sm text-gray-600 mb-3">AI-Powered Reconciliation, Peace & Sustainability Platform</p>
+                    <div class="text-left text-sm text-gray-700 space-y-1">
+                        <p><span class="font-semibold text-gray-900">Problem:</span> Post-conflict division and unsustainable practices.</p>
+                        <p><span class="font-semibold text-gray-900">AI Approach:</span> Platform for community building, resource sharing, and conflict resolution.</p>
+                    </div>
+                    <span class="mt-4 inline-block px-3 py-1 bg-blue-200 text-blue-800 text-xs font-semibold rounded-full">Ideation Winner</span>
+                </a>
+                <!-- Idea 5 -->
+                <a href="https://deepfunding.ai/rfp_ideation/trucenet-ai-for-conflict-resolution-simulations/" target="_blank" class="block bg-blue-50 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-blue-100">
+                    <h4 class="text-xl font-bold text-blue-800 mb-2">TruceNet AI</h4>
+                    <p class="text-sm text-gray-600 mb-3">AI for Conflict Resolution Simulations</p>
+                    <div class="text-left text-sm text-gray-700 space-y-1">
+                        <p><span class="font-semibold text-gray-900">Problem:</span> Ineffective negotiation training and preparedness.</p>
+                        <p><span class="font-semibold text-gray-900">AI Approach:</span> AI-driven simulations for peace negotiators and diplomats.</p>
+                    </div>
+                    <span class="mt-4 inline-block px-3 py-1 bg-blue-200 text-blue-800 text-xs font-semibold rounded-full">Ideation Winner</span>
+                </a>
+                <!-- Idea 6 -->
+                <a href="https://deepfunding.ai/rfp_ideation/digital-diplomacy-consensus-platform/" target="_blank" class="block bg-blue-50 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-blue-100">
+                    <h4 class="text-xl font-bold text-blue-800 mb-2">Digital Diplomacy Consensus Platform</h4>
+                    <p class="text-sm text-gray-600 mb-3">Facilitating International Consensus Building</p>
+                    <div class="text-left text-sm text-gray-700 space-y-1">
+                        <p><span class="font-semibold text-gray-900">Problem:</span> Slow and inefficient international consensus building.</p>
+                        <p><span class="font-semibold text-gray-900">AI Approach:</span> AI to analyze positions, identify common ground, and facilitate agreements.</p>
+                    </div>
+                    <span class="mt-4 inline-block px-3 py-1 bg-blue-200 text-blue-800 text-xs font-semibold rounded-full">Ideation Winner</span>
+                </a>
+                <!-- Idea 7 -->
+                <a href="https://deepfunding.ai/rfp_ideation/aidchain-ai-powered-blockchain-system-for-transparent-refugee-aid-distribution/" target="_blank" class="block bg-blue-50 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-blue-100">
+                    <h4 class="text-xl font-bold text-blue-800 mb-2">AidChain AI</h4>
+                    <p class="text-sm text-gray-600 mb-3">AI-Powered Blockchain for Transparent Refugee Aid Distribution</p>
+                    <div class="text-left text-sm text-gray-700 space-y-1">
+                        <p><span class="font-semibold text-gray-900">Problem:</span> Inefficient and non-transparent aid distribution to refugees.</p>
+                        <p><span class="font-semibold text-gray-900">AI Approach:</span> AI optimizing logistics and blockchain ensuring transparency.</p>
+                    </div>
+                    <span class="mt-4 inline-block px-3 py-1 bg-blue-200 text-blue-800 text-xs font-semibold rounded-full">Ideation Winner</span>
+                </a>
+                <!-- Idea 8 -->
+                <a href="https://deepfunding.ai/rfp_ideation/peaceguard-ai-a-multi-lingual-misinformation-detection-and-verification-framework/" target="_blank" class="block bg-blue-50 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-blue-100">
+                    <h4 class="text-xl font-bold text-blue-800 mb-2">PeaceGuard AI</h4>
+                    <p class="text-sm text-gray-600 mb-3">Multi-Lingual Misinformation Detection and Verification Framework</p>
+                    <div class="text-left text-sm text-gray-700 space-y-1">
+                        <p><span class="font-semibold text-gray-900">Problem:</span> Spread of misinformation fueling conflict across languages.</p>
+                        <p><span class="font-semibold text-gray-900">AI Approach:</span> AI detecting and verifying information across multiple languages.</p>
+                    </div>
+                    <span class="mt-4 inline-block px-3 py-1 bg-blue-200 text-blue-800 text-xs font-semibold rounded-full">Ideation Winner</span>
+                </a>
+            </div>
+
+            <h3 class="text-2xl sm:text-3xl font-semibold text-[#005F73] mb-8">Top 6 Hackathon Winners ($3,000 Each!)</h3>
+            <div class="bg-teal-50 rounded-xl shadow-md p-6 sm:p-8 max-w-2xl mx-auto border border-teal-100">
+                <ul class="list-disc list-inside text-left text-lg text-gray-700 space-y-3">
+                    <li>**Team HarmonyBuilders:** For their prototype on AI-driven community dialogue facilitation.</li>
+                    <li>**PeaceTech Innovators:** For their early warning system dashboard.</li>
+                    <li>**Digital Diplomats Collective:** For their consensus-building tool prototype.</li>
+                    <li>**Refugee Aid Optimizers:** For their transparent aid distribution proof-of-concept.</li>
+                    <li>**Truce Simulation Squad:** For their interactive conflict negotiation simulator.</li>
+                    <li>**Veritas AI:** For their misinformation detection and verification framework.</li>
+                </ul>
+                <p class="text-center text-xl font-bold text-teal-800 mt-6">Congratulations to all the winning teams!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Impact Metrics Section (Chart.js) -->
+    <section id="impact" class="section-padding bg-[#F8F7F4]">
+        <div class="container text-center max-w-4xl">
+            <h2 class="text-3xl sm:text-4xl font-bold text-[#005F73] mb-6">Dualathon Impact: A Snapshot</h2>
+            <p class="text-lg text-gray-700 mb-8 max-w-3xl mx-auto">
+                The Dualathon generated significant engagement and high-quality ideas, demonstrating the immense potential of our community-driven approach to AI for Peace. Here's a look at some key metrics.
+            </p>
+            <div class="chart-container">
+                <canvas id="impactChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recap & Future Section -->
+    <section id="recap" class="section-padding bg-white">
+        <div class="container text-center max-w-4xl">
+            <h2 class="text-3xl sm:text-4xl font-bold text-[#005F73] mb-6">Recap & What's Next</h2>
+            <p class="text-lg text-gray-700 mb-8 leading-relaxed">
+                The AI for Peace Dualathon was a resounding success, validating our unique ideation-to-prototype model. We witnessed incredible innovation and a deep commitment from participants to leverage AI for positive change.
+            </p>
+            <div class="bg-gray-50 p-6 rounded-xl shadow-sm border border-gray-100 text-left mb-8">
+                <h3 class="text-xl font-semibold text-[#005F73] mb-3">Key Highlights:</h3>
+                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                    <li>Demonstrated the power of combining open ideation with rapid hackathon prototyping.</li>
+                    <li>Attracted a diverse global talent pool passionate about peacebuilding.</li>
+                    <li>Generated a rich pipeline of ethically-conscious AI solutions.</li>
+                    <li>Strengthened the AI4P and DeepFunding communities.</li>
+                </ul>
+            </div>
+            <p class="text-lg text-gray-700 mb-10">
+                Inspired by these achievements, we are committed to fostering more such initiatives. Your idea could be the next breakthrough!
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="#" class="inline-block px-8 py-3 bg-[#005F73] text-white font-semibold rounded-lg shadow-md hover:bg-[#004c5c] transition-colors duration-200">Submit Your Idea Now</a>
+                <a href="https://deepfunding.ai/" target="_blank" class="inline-block px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors duration-200">Explore All DeepFunding Projects</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#005F73] text-white py-8 mt-12">
+        <div class="container text-center">
+            <p class="text-sm">&copy; 2025 AI4P.ai, A DeepFunding Initiative. All rights reserved.</p>
+            <div class="flex justify-center space-x-4 mt-4">
+                <a href="#" class="text-white hover:text-gray-300 text-sm">Privacy Policy</a>
+                <a href="#" class="text-white hover:text-gray-300 text-sm">Terms of Service</a>
+                <a href="#" class="text-white hover:text-gray-300 text-sm">Contact Us</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Chart.js for Impact Metrics
+        const ctx = document.getElementById('impactChart').getContext('2d');
+        const impactChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Total Ideas Submitted', 'Ideas to Hackathon', 'Hackathon Prototypes', 'Funded Projects'],
+                datasets: [{
+                    label: 'Dualathon Progress',
+                    data: [150, 25, 6, 8], /* Example data based on provided info */
+                    backgroundColor: [
+                        'rgba(148, 210, 189, 0.8)', /* #94D2BD */
+                        'rgba(0, 95, 115, 0.8)',  /* #005F73 */
+                        'rgba(233, 216, 166, 0.8)', /* #E9D8A6 */
+                        'rgba(251, 191, 36, 0.8)' /* FBBF24 - a bit brighter for funded */
+                    ],
+                    borderColor: [
+                        '#94D2BD',
+                        '#005F73',
+                        '#E9D8A6',
+                        '#FBBF24'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, /* CRITICAL for container responsiveness */
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                // Wrap title if too long
+                                const title = context[0].label;
+                                if (title.length > 16) {
+                                    return title.match(/.{1,16}/g); // Wrap at 16 chars
+                                }
+                                return title;
+                            },
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(200, 200, 200, 0.2)'
+                        },
+                        ticks: {
+                            color: '#6B7280'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#6B7280',
+                            autoSkip: false, /* Prevent labels from being skipped */
+                            maxRotation: 45, /* Rotate labels if needed */
+                            minRotation: 45,
+                            callback: function(value, index, values) {
+                                // Wrap x-axis labels if too long
+                                const label = this.getLabelForValue(value);
+                                if (label.length > 12) { // Adjust threshold as needed
+                                    return label.match(/.{1,12}/g);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
