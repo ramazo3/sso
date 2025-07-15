@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Funding SSO Prototype: Wallet-Based Login & Unified Profile</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-5xl transform transition-all duration-300 ease-in-out">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Deep Funding SSO Prototype: Wallet & Unified Profile</h1>
+
+        <!-- Navigation Buttons -->
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+            <button id="goToSnetLoginBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Sign in with SNET
+            </button>
+            <button id="goToProfileBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                My Profile
+            </button>
+            <button id="goToDeepLabsBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Deep Labs
+            </button>
+            <button id="goToDFPortalBtn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                DF Portal
+            </button>
+            <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Logout
+            </button>
+        </div>
+
+        <!-- Dynamic Content Area -->
+        <div id="content-area" class="border border-gray-200 rounded-lg p-6 bg-gray-50 min-h-[400px] flex items-center justify-center relative">
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10 hidden rounded-lg">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500"></div>
+            </div>
+
+            <!-- SNET Login Section (Simulated IdP) -->
+            <div id="snet-login-section" class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 text-center">Sign in with SNET</h2>
+                <div id="snet-message" class="text-center text-sm font-medium mb-4 text-red-600"></div>
+
+                <div class="mb-4">
+                    <label for="wallet-address" class="block text-gray-700 text-sm font-bold mb-2">Mock Wallet Address:</label>
+                    <input type="text" id="wallet-address" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0xAbC...123" value="0xMockWalletAddress1234567890abcdef">
+                </div>
+                <button id="connect-wallet-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 ease-in-out transform hover:scale-105 w-full mb-4">
+                    1. Connect Wallet & Sign
+                </button>
+
+                <div id="signature-area" class="hidden">
+                    <div class="mb-4">
+                        <label for="message-to-sign" class="block text-gray-700 text-sm font-bold mb-2">Message to Sign:</label>
+                        <textarea id="message-to-sign" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100" rows="3" readonly></textarea>
+                    </div>
+                    <div class="mb-6">
+                        <label for="mock-signature" class="block text-gray-700 text-sm font-bold mb-2">Mock Signature:</label>
+                        <input type="text" id="mock-signature" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter mock signature here (e.g., 'signed')">
+                    </div>
+                    <button id="verify-signature-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 ease-in-out transform hover:scale-105 w-full">
+                        2. Verify Signature & Login
+                    </button>
+                </div>
+
+                <div id="email-password-register-area" class="hidden mt-6 border-t pt-4">
+                    <p class="text-center text-gray-600 mb-4">New SNET Identity? Register with Email & Password:</p>
+                    <div class="mb-4">
+                        <label for="register-email" class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                        <input type="email" id="register-email" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@email.com">
+                    </div>
+                    <div class="mb-6">
+                        <label for="register-password" class="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+                        <input type="password" id="register-password" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="********">
+                    </div>
+                    <button id="register-snet-btn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 ease-in-out transform hover:scale-105 w-full">
+                        Register SNET Identity
+                    </button>
+                </div>
+            </div>
+
+            <!-- My Profile Section -->
+            <div id="my-profile-section" class="hidden w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-indigo-700 mb-6 text-center">My Unified Deep Funding Profile</h2>
+                <div class="space-y-4 text-gray-700">
+                    <p><strong>Email:</strong> <span id="profile-email"></span></p>
+                    <p><strong>Username:</strong> <span id="profile-username"></span></p>
+                    <p><strong>SNET Wallet:</strong> <span id="profile-wallet"></span></p>
+                    <p><strong>Deep Funding DID:</strong> <span id="profile-did"></span></p>
+                    <p><strong>KYC Status:</strong> <span id="profile-kyc" class="font-bold"></span></p>
+                    <p><strong>Registration Date:</strong> <span id="profile-reg-date"></span></p>
+                </div>
+                <button id="edit-profile-btn" class="mt-8 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 ease-in-out transform hover:scale-105 w-full">
+                    Edit Profile (Conceptual)
+                </button>
+            </div>
+
+            <!-- Deep Labs Section -->
+            <div id="deep-labs-section" class="hidden w-full text-center">
+                <h2 class="text-2xl font-semibold text-purple-700 mb-4">Welcome to Deep Labs!</h2>
+                <p id="deep-labs-user-info" class="text-gray-700 text-lg"></p>
+                <p class="text-gray-500 mt-2">This is your innovative platform for AI-driven solutions.</p>
+                <p class="text-gray-500 mt-4">Leveraging your SNET Identity for seamless experience.</p>
+            </div>
+
+            <!-- Deep Funding Portal Section -->
+            <div id="df-portal-section" class="hidden w-full text-center">
+                <h2 class="text-2xl font-semibold text-green-700 mb-4">Welcome to the Deep Funding Portal!</h2>
+                <p id="df-portal-user-info" class="text-gray-700 text-lg"></p>
+                <p class="text-gray-500 mt-2">Manage your proposals, rounds, and community here.</p>
+                <p class="text-gray-500 mt-4">Your SNET Identity provides unified access.</p>
+            </div>
+
+            <!-- Global Message Box -->
+            <div id="message-box" class="fixed bottom-4 right-4 bg-gray-800 text-white py-3 px-6 rounded-lg shadow-xl hidden transition-all duration-300 ease-in-out z-50">
+                <p id="message-text"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase config (provided by Canvas environment)
+        const appId = "1:137748040614:web:ebdcda878fe2b891109d67;
+        const firebaseConfig = {
+          apiKey: "AIzaSyCBnJ7AOWggzZeVE-i4zZCq7R3sOvnhEVM",
+          authDomain: "labs-463322.firebaseapp.com",
+          projectId: "labs-463322",
+          storageBucket: "labs-463322.firebasestorage.app",
+          messagingSenderId: "137748040614",
+          appId: "1:137748040614:web:ebdcda878fe2b891109d67",
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+        let userId = null; // Firebase Auth UID
+        let currentUserProfile = null; // Stores the fetched user profile from Firestore
+        let isAuthReady = false; // Flag to ensure Firestore operations wait for auth readiness
+
+        // UI Elements
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const snetLoginSection = document.getElementById('snet-login-section');
+        const walletAddressInput = document.getElementById('wallet-address');
+        const connectWalletBtn = document.getElementById('connect-wallet-btn');
+        const signatureArea = document.getElementById('signature-area');
+        const messageToSignTextarea = document.getElementById('message-to-sign');
+        const mockSignatureInput = document.getElementById('mock-signature');
+        const verifySignatureBtn = document.getElementById('verify-signature-btn');
+        const emailPasswordRegisterArea = document.getElementById('email-password-register-area');
+        const registerEmailInput = document.getElementById('register-email');
+        const registerPasswordInput = document.getElementById('register-password');
+        const registerSnetBtn = document.getElementById('register-snet-btn');
+        const snetMessage = document.getElementById('snet-message');
+
+        const myProfileSection = document.getElementById('my-profile-section');
+        const profileEmail = document.getElementById('profile-email');
+        const profileUsername = document.getElementById('profile-username');
+        const profileWallet = document.getElementById('profile-wallet');
+        const profileDid = document.getElementById('profile-did');
+        const profileKyc = document.getElementById('profile-kyc');
+        const profileRegDate = document.getElementById('profile-reg-date');
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+
+        const deepLabsSection = document.getElementById('deep-labs-section');
+        const deepLabsUserInfo = document.getElementById('deep-labs-user-info');
+        const dfPortalSection = document.getElementById('df-portal-section');
+        const dfPortalUserInfo = document.getElementById('df-portal-user-info');
+
+        const goToSnetLoginBtn = document.getElementById('goToSnetLoginBtn');
+        const goToProfileBtn = document.getElementById('goToProfileBtn');
+        const goToDeepLabsBtn = document.getElementById('goToDeepLabsBtn');
+        const goToDFPortalBtn = document.getElementById('goToDFPortalBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        // Global State for simulated SSO
+        let currentView = 'snet-login'; // Can be 'snet-login', 'my-profile', 'deep-labs', 'df-portal'
+        let currentWalletAddress = null; // Stores the wallet address from the simulated connection
+
+        // --- Firebase Initialization and Authentication ---
+        async function initializeFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    showMessage("Firebase config is missing. Prototype will run without persistence.", "warning");
+                    // For local testing without Firebase config, proceed as anonymous
+                    return;
+                }
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Listen for auth state changes
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        // Attempt to fetch user profile from Firestore
+                        await fetchUserProfile(userId);
+                    } else {
+                        userId = null;
+                        currentUserProfile = null;
+                    }
+                    isAuthReady = true; // Auth state has been checked
+                    updateUI(); // Update UI after auth state is determined
+                });
+
+                // Sign in using the initial custom token or anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    showMessage("Signed in with custom token.", "success");
+                } else {
+                    await signInAnonymously(auth);
+                    showMessage("Signed in anonymously. Please use 'Sign in with SNET' for full features.", "info");
+                }
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showMessage(`Firebase init error: ${error.message}`, "error");
+            }
+        }
+
+        // --- Utility Functions ---
+
+        function showLoading() {
+            loadingIndicator.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingIndicator.classList.add('hidden');
+        }
+
+        function showMessage(msg, type = 'info') {
+            messageText.textContent = msg;
+            messageBox.classList.remove('hidden', 'bg-red-500', 'bg-green-500', 'bg-blue-500', 'bg-yellow-500', 'bg-gray-800');
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-500');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-500');
+            } else if (type === 'info') {
+                messageBox.classList.add('bg-blue-500');
+            } else if (type === 'warning') {
+                messageBox.classList.add('bg-yellow-500'); // Use yellow for warnings
+            } else {
+                messageBox.classList.add('bg-gray-800');
+            }
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000); // Hide after 5 seconds
+        }
+
+        function hideAllSections() {
+            snetLoginSection.classList.add('hidden');
+            myProfileSection.classList.add('hidden');
+            deepLabsSection.classList.add('hidden');
+            dfPortalSection.classList.add('hidden');
+        }
+
+        // Mock DID Generator
+        function generateMockDid(walletAddress) {
+            // A very simple mock DID based on wallet hash
+            const hash = btoa(walletAddress).substring(0, 10); // Base64 encode and truncate
+            return `did:snet:${hash}`;
+        }
+
+        async function fetchUserProfile(uid) {
+            if (!db || !isAuthReady) {
+                console.warn("Firestore not ready to fetch user profile.");
+                return null;
+            }
+            try {
+                showLoading();
+                const userDocRef = doc(db, `artifacts/${appId}/users/${uid}/profiles`, uid); // Private user data
+                const docSnap = await getDoc(userDocRef);
+                if (docSnap.exists()) {
+                    currentUserProfile = docSnap.data();
+                    console.log("User profile fetched:", currentUserProfile);
+                    return currentUserProfile;
+                } else {
+                    console.log("No user profile found for UID:", uid);
+                    // If Firebase user exists but no Firestore profile, create a basic one
+                    if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                         currentUserProfile = {
+                            email: auth.currentUser.email || 'N/A',
+                            username: auth.currentUser.email ? auth.currentUser.email.split('@')[0] : 'Guest',
+                            snetWalletAddress: 'N/A',
+                            deepFundingDID: 'N/A',
+                            kycStatus: 'Not Verified',
+                            registrationDate: new Date().toISOString()
+                        };
+                        await saveUserProfile(uid, currentUserProfile); // Save this basic profile
+                    } else {
+                        currentUserProfile = null;
+                    }
+                    return currentUserProfile;
+                }
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                showMessage(`Failed to fetch profile: ${error.message}`, "error");
+                return null;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function saveUserProfile(uid, profileData) {
+            if (!db || !isAuthReady) {
+                showMessage("Firestore not ready to save user profile.", "error");
+                return false;
+            }
+            try {
+                showLoading();
+                const userDocRef = doc(db, `artifacts/${appId}/users/${uid}/profiles`, uid); // Private user data
+                await setDoc(userDocRef, profileData, { merge: true });
+                showMessage("User profile saved successfully!", "success");
+                currentUserProfile = { ...currentUserProfile, ...profileData }; // Update local copy
+                return true;
+            } catch (error) {
+                console.error("Error saving user profile:", error);
+                showMessage(`Failed to save profile: ${error.message}`, "error");
+                return false;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- SSO & App Navigation Logic ---
+
+        function updateUI() {
+            hideAllSections();
+            const isLoggedIn = auth.currentUser && !auth.currentUser.isAnonymous; // Check if a real user is logged in
+
+            // Update user info for app sections
+            const userInfoText = isLoggedIn && currentUserProfile ?
+                `User: ${currentUserProfile.username || currentUserProfile.email} (UID: ${userId})` :
+                `Not logged in.`;
+            deepLabsUserInfo.textContent = userInfoText;
+            dfPortalUserInfo.textContent = userInfoText;
+
+            // Update profile section
+            if (currentUserProfile) {
+                profileEmail.textContent = currentUserProfile.email || 'N/A';
+                profileUsername.textContent = currentUserProfile.username || 'N/A';
+                profileWallet.textContent = currentUserProfile.snetWalletAddress || 'N/A';
+                profileDid.textContent = currentUserProfile.deepFundingDID || 'N/A';
+                profileKyc.textContent = currentUserProfile.kycStatus || 'N/A';
+                profileKyc.className = `font-bold ${currentUserProfile.kycStatus === 'Verified' ? 'text-green-600' : 'text-red-600'}`;
+                profileRegDate.textContent = currentUserProfile.registrationDate ? new Date(currentUserProfile.registrationDate).toLocaleDateString() : 'N/A';
+            } else {
+                // Clear profile fields if no user
+                profileEmail.textContent = profileUsername.textContent = profileWallet.textContent = profileDid.textContent = profileKyc.textContent = profileRegDate.textContent = 'N/A';
+                profileKyc.className = 'font-bold text-red-600';
+            }
+
+
+            // Show current view
+            if (currentView === 'snet-login') {
+                snetLoginSection.classList.remove('hidden');
+                snetMessage.textContent = isLoggedIn ? `You are logged in as ${currentUserProfile?.username || currentUserProfile?.email}.` : 'Please connect your wallet and sign to login or register.';
+                signatureArea.classList.add('hidden');
+                emailPasswordRegisterArea.classList.add('hidden');
+            } else if (currentView === 'my-profile') {
+                myProfileSection.classList.remove('hidden');
+            } else if (currentView === 'deep-labs') {
+                deepLabsSection.classList.remove('hidden');
+            } else if (currentView === 'df-portal') {
+                dfPortalSection.classList.remove('hidden');
+            }
+
+            // Enable/Disable navigation buttons
+            goToProfileBtn.disabled = !isLoggedIn;
+            goToDeepLabsBtn.disabled = !isLoggedIn;
+            goToDFPortalBtn.disabled = !isLoggedIn;
+            logoutBtn.disabled = !isLoggedIn;
+            goToSnetLoginBtn.disabled = false; // Always allow going back to SNET login page
+        }
+
+        // --- Event Listeners ---
+
+        goToSnetLoginBtn.addEventListener('click', () => {
+            currentView = 'snet-login';
+            updateUI();
+        });
+
+        goToProfileBtn.addEventListener('click', () => {
+            if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                currentView = 'my-profile';
+                updateUI();
+            } else {
+                showMessage("You need to be logged in to view your profile. Please Sign in with SNET.", "warning");
+                currentView = 'snet-login';
+                updateUI();
+            }
+        });
+
+        goToDeepLabsBtn.addEventListener('click', () => {
+            if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                currentView = 'deep-labs';
+                updateUI();
+            } else {
+                showMessage("You need to be logged in to access Deep Labs. Please Sign in with SNET.", "warning");
+                currentView = 'snet-login'; // Redirect to SSO login page
+                updateUI();
+            }
+        });
+
+        goToDFPortalBtn.addEventListener('click', () => {
+            if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                currentView = 'df-portal';
+                updateUI();
+            } else {
+                showMessage("You need to be logged in to access the Deep Funding Portal. Please Sign in with SNET.", "warning");
+                currentView = 'snet-login'; // Redirect to SSO login page
+                updateUI();
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            showLoading();
+            try {
+                if (auth) {
+                    await signOut(auth);
+                }
+                userId = null;
+                currentUserProfile = null;
+                currentWalletAddress = null;
+                currentView = 'snet-login'; // Redirect to SNET login after logout
+                showMessage("Logged out successfully.", "success");
+            } catch (error) {
+                console.error("Error during logout:", error);
+                showMessage(`Logout failed: ${error.message}`, "error");
+            } finally {
+                hideLoading();
+                updateUI();
+            }
+        });
+
+        connectWalletBtn.addEventListener('click', async () => {
+            const walletAddress = walletAddressInput.value.trim();
+            if (!walletAddress) {
+                showMessage("Please enter a mock wallet address.", "warning");
+                return;
+            }
+            currentWalletAddress = walletAddress;
+            const mockNonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            messageToSignTextarea.value = `Sign in to Deep Funding with wallet ${walletAddress} on ${new Date().toISOString()}. Nonce: ${mockNonce}`;
+            signatureArea.classList.remove('hidden');
+            emailPasswordRegisterArea.classList.add('hidden'); // Hide registration area initially
+            snetMessage.textContent = "Please simulate signing the message below.";
+        });
+
+        verifySignatureBtn.addEventListener('click', async () => {
+            const mockSignature = mockSignatureInput.value.trim();
+            if (!mockSignature) {
+                showMessage("Please enter a mock signature.", "warning");
+                return;
+            }
+            if (!currentWalletAddress) {
+                showMessage("Please connect wallet first.", "error");
+                return;
+            }
+
+            showLoading();
+            try {
+                // Simulate checking if a user with this wallet address already exists
+                const profilesRef = collection(db, `artifacts/${appId}/users`);
+                const q = query(profilesRef, where("snetWalletAddress", "==", currentWalletAddress));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    // User with this wallet exists, sign in
+                    const userData = querySnapshot.docs[0].data();
+                    const userUid = querySnapshot.docs[0].id; // The UID is the document ID
+
+                    // Simulate signing in the Firebase user associated with this profile
+                    // In a real system, this would involve a custom token generated on a backend
+                    // after verifying the wallet signature. For prototype, we'll just sign in anonymously
+                    // if not already signed in, or assume the current user is the one.
+                    if (!auth.currentUser || auth.currentUser.uid !== userUid) {
+                        await signOut(auth); // Ensure clean state
+                        // This is a major simplification: real SSO would use custom token from backend
+                        // based on wallet verification. Here, we simulate by re-signing in with email/password
+                        // if available, or just updating profile if already anon.
+                        const email = userData.email;
+                        const password = "mock-password"; // This won't work without actual password in Firestore
+                        if (email && email !== 'N/A') {
+                            await signInWithEmailAndPassword(auth, email, password); // This requires a real password
+                        } else {
+                            await signInAnonymously(auth); // Fallback for mock profiles
+                        }
+                    }
+                    userId = auth.currentUser.uid;
+                    currentUserProfile = userData;
+                    showMessage("Wallet verified. Logged in successfully!", "success");
+                    currentView = 'my-profile'; // Go to profile after login
+                } else {
+                    // Wallet address not found, prompt for registration
+                    emailPasswordRegisterArea.classList.remove('hidden');
+                    snetMessage.textContent = "Wallet address not found. Please register with an email and password to create your SNET Identity.";
+                }
+            } catch (error) {
+                console.error("Wallet Verification/Login Error:", error);
+                showMessage(`Verification failed: ${error.message}`, "error");
+            } finally {
+                hideLoading();
+                updateUI();
+            }
+        });
+
+        registerSnetBtn.addEventListener('click', async () => {
+            const email = registerEmailInput.value.trim();
+            const password = registerPasswordInput.value.trim();
+
+            if (!email || !password || !currentWalletAddress) {
+                showMessage("Please provide email, password, and ensure wallet is connected.", "warning");
+                return;
+            }
+
+            showLoading();
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                userId = userCredential.user.uid;
+
+                const newProfile = {
+                    email: email,
+                    username: email.split('@')[0],
+                    snetWalletAddress: currentWalletAddress,
+                    deepFundingDID: generateMockDid(currentWalletAddress),
+                    kycStatus: 'Not Verified', // Default for new users
+                    registrationDate: new Date().toISOString()
+                };
+                await saveUserProfile(userId, newProfile);
+                currentUserProfile = newProfile;
+
+                showMessage("SNET Identity registered and logged in successfully!", "success");
+                currentView = 'my-profile'; // Go to profile after registration
+                updateUI();
+            } catch (error) {
+                console.error("SNET Identity Registration Error:", error);
+                showMessage(`Registration failed: ${error.message}`, "error");
+            } finally {
+                hideLoading();
+            }
+        });
+
+        editProfileBtn.addEventListener('click', () => {
+            showMessage("Edit Profile functionality is conceptual in this prototype. In a real system, this would open an editable form.", "info");
+            // Here you would typically open a modal or navigate to an edit page
+            // For example, to simulate KYC verification:
+            if (currentUserProfile && currentUserProfile.kycStatus === 'Not Verified') {
+                saveUserProfile(userId, { kycStatus: 'Verified' }); // Simulate KYC success
+                updateUI();
+            }
+        });
+
+        // --- Initialize the App ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase(); // Start Firebase initialization
+            updateUI(); // Initial UI render (will be updated again by onAuthStateChanged)
+        });
+
+    </script>
+</body>
+</html>
