@@ -291,7 +291,7 @@
         }
 
         async function fetchUserProfile(uid) {
-            if (!db || !isAuthReady) {
+            if (!db) {
                 console.warn("Firestore not ready to fetch user profile.");
                 return null;
             }
