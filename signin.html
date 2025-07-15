@@ -307,7 +307,7 @@
                 } else {
                     console.log("No user profile found for UID:", uid);
                     // If Firebase user exists but no Firestore profile, create a basic one
-                    if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                    //if (auth.currentUser && !auth.currentUser.isAnonymous) {
                          currentUserProfile = {
                             email: auth.currentUser.email || 'N/A',
                             username: auth.currentUser.email ? auth.currentUser.email.split('@')[0] : 'Guest',
@@ -317,9 +317,9 @@
                             registrationDate: new Date().toISOString()
                         };
                         await saveUserProfile(uid, currentUserProfile); // Save this basic profile
-                    } else {
-                        currentUserProfile = null;
-                    }
+                   // } else {
+                   //     currentUserProfile = null;
+                    //}
                     return currentUserProfile;
                 }
             } catch (error) {
