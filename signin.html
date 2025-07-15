@@ -221,6 +221,7 @@
 
                 // Listen for auth state changes
                 onAuthStateChanged(auth, async (user) => {
+                    isAuthReady = true; // Auth state has been checked
                     if (user) {
                         userId = user.uid;
                         // Attempt to fetch user profile from Firestore
@@ -229,7 +230,7 @@
                         userId = null;
                         currentUserProfile = null;
                     }
-                    isAuthReady = true; // Auth state has been checked
+                    
                     updateUI(); // Update UI after auth state is determined
                 });
 
